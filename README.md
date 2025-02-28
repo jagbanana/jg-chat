@@ -1,8 +1,12 @@
 # JGChat - Claude AI Chatbot for WordPress
 
-JGChat is a lightweight yet powerful WordPress plugin that adds a customizable AI chatbot powered by Anthropic's Claude AI to your website.
+JGChat is a lightweight yet powerful WordPress plugin that adds a customizable AI chatbot powered by Anthropic's Claude AI to your website. It has a friendly, familiar UI, with nice animations. It can appear as a form area within a page (via shortcode) or as a floating widget on the bottom of all pages.
+
+Frontend example:
 
 ![JGChat Frontend Screenshot](assets/screenshot.png)
+
+Backend example:
 
 ![JGChat Backend Screenshot](assets/screenshot2.png)
 
@@ -19,17 +23,12 @@ JGChat is a lightweight yet powerful WordPress plugin that adds a customizable A
 
 ## Installation
 
-### Method 1: Direct Upload
+### Direct Upload
 
 1. Download the latest release from [GitHub Releases](https://github.com/yourusername/jgchat/releases)
 2. Upload the plugin folder to your `/wp-content/plugins/` directory
 3. Activate the plugin through the 'Plugins' menu in WordPress
 4. Configure your settings at `WP Admin > JGChat > Settings`
-
-### Method 2: WordPress Plugin Directory
-
-*Coming soon*
-
 ## Configuration
 
 ### Required Setup
