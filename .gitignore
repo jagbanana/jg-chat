@@ -1,0 +1,52 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+Desktop.ini
+.Spotlight-V100
+.Trashes
+
+# IDE Files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+.project
+.settings/
+*.swp
+*.swo
+
+# Node/NPM/Yarn (if you use these for build processes)
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Composer
+vendor/
+composer.lock
+
+# Build Files
+build/
+dist/
+
+# WordPress specific
+wp-config.php
+wp-content/uploads/
+wp-content/upgrade/
+wp-content/backup-db/
+wp-content/cache/
+wp-content/backups/
+
+# Plugin specific (add any sensitive or environment-specific files)
+config.local.php
+.env
+api-keys.php
+
+# Log files
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/

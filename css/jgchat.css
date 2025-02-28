@@ -1,0 +1,296 @@
+/* css/jgchat.css */
+
+/* Base chat container styles - used by both embedded and widget versions */
+#jgchat-messages {
+    overflow-y: auto;
+    padding: 20px;
+    background: #1a1a1a;
+    color: #ffffff;
+}
+
+/* Scrollbar styling */
+#jgchat-messages::-webkit-scrollbar {
+    width: 10px;
+}
+
+#jgchat-messages::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+#jgchat-messages::-webkit-scrollbar-thumb {
+    background: #444444;
+    border-radius: 4px;
+}
+
+#jgchat-messages::-webkit-scrollbar-thumb:hover {
+    background: #555555;
+}
+
+/* Firefox scrollbar styling */
+#jgchat-messages {
+    scrollbar-width: thin;
+    scrollbar-color: #444444 #1a1a1a;
+}
+
+/* Message styling */
+.jgchat-message {
+    margin-bottom: 20px;
+    padding: 15px;
+    border-radius: 8px;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.jgchat-message p {
+    margin: 0.5em 0;
+    padding-left: 0;
+    color: #ffffff;
+}
+
+.chat-header {
+    padding-top: 1em;
+    color: #aaaaaa;
+    font-size: 1.1em;
+}
+
+.chat-list-item {
+    margin: 0.25em 0 0.25em 1em;
+    color: #ffffff;
+}
+
+/* Lists within messages */
+.jgchat-message ul {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+    list-style: disc;
+    color: #ffffff;
+}
+
+.jgchat-message ul li {
+    margin: 0.3em 0;
+    padding-left: 0.5em;
+}
+
+.jgchat-message ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: #ffffff;
+}
+
+/* Code formatting */
+.jgchat-message code {
+    background: #333333;
+    border: 1px solid #444444;
+    color: #ffffff;
+    padding: 8px;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+.jgchat-message pre {
+    background: #333333;
+    padding: 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1em 0;
+    border: 1px solid #444444;
+}
+
+/* Message types */
+.jgchat-user-message {
+    background: #2563eb;
+    margin-left: 20%;
+    font-size: 1em;
+}
+
+.jgchat-bot-message {
+    background: #2a2a2a;
+    margin-right: 20%;
+    font-size: 1em;
+}
+
+/* Input container */
+#jgchat-input-container {
+    display: flex;
+    padding: 15px;
+    background: #1a1a1a;
+    border-top: 1px solid #444444;
+}
+
+#jgchat-input {
+    flex: 1;
+    padding: 8px 16px;
+    background: #333333;
+    border: 1px solid #444444;
+    color: #ffffff;
+    border-radius: 4px;
+    margin-right: 10px;
+    resize: vertical;
+    min-height: 40px;
+}
+
+#jgchat-input::placeholder {
+    color: #888888;
+}
+
+#jgchat-send {
+    padding: 8px 16px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: 0.3s ease;
+}
+
+#jgchat-send:hover {
+    background: #1d4ed8;
+}
+
+#jgchat-send:disabled {
+    background: #333333;
+    opacity: 0.8;
+    cursor: not-allowed;
+}
+
+/* Typing indicator */
+.jgchat-typing {
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.typing-dot {
+    width: 8px;
+    height: 8px;
+    background: #2563eb;
+    border-radius: 50%;
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) { animation-delay: 0s; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing {
+    0%, 100% { transform: scale(1); opacity: 0.4; }
+    50% { transform: scale(1.2); opacity: 1; }
+}
+
+/* Embedded chat specific styles */
+.jgchat-embedded {
+    border: 1px solid #444444;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1a1a1a;
+    height: 600px;
+    display: flex;
+    flex-direction: column;
+}
+
+.jgchat-embedded #jgchat-messages {
+    flex: 1;
+    height: auto;
+}
+
+/* Widget specific styles */
+#jgchat-widget-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #2563eb;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+    z-index: 9998;
+    transition: transform 0.3s ease;
+}
+
+#jgchat-widget-button:hover {
+    transform: scale(1.1);
+}
+
+.jgchat-widget-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 36px;
+    color: white;
+}
+
+.jgchat-notification-dot {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 12px;
+    height: 12px;
+    background: #ef4444;
+    border-radius: 50%;
+    border: 2px solid #1a1a1a;
+}
+
+#jgchat-widget-container {
+    position: fixed;
+    bottom: 90px;
+    right: 20px;
+    width: 360px;
+    height: 600px;
+    border-radius: 12px;
+    background: #1a1a1a;
+    box-shadow: 0 5px 40px rgba(0, 0, 0, 0.3);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.jgchat-widget-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 20px;
+    background: #2563eb;
+    color: white;
+}
+
+.jgchat-widget-title {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.jgchat-widget-minimize {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 5px;
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+    #jgchat-widget-container {
+        width: calc(100% - 40px);
+        height: calc(100% - 120px);
+        bottom: 90px;
+    }
+    
+    .jgchat-embedded {
+        height: 400px;
+    }
+}
