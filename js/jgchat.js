@@ -14,6 +14,11 @@ jQuery(document).ready(function($) {
     // Store chat history
     let chatHistory = [];
 
+    // Apply theme mode if set
+    if (jgchatAjax.themeMode === 'light') {
+        $('.jgchat-embedded, #jgchat-widget-container').addClass('jgchat-light-mode');
+    }
+
     // Widget functionality
     widgetButton.on('click', function() {
         widgetContainer.toggle();

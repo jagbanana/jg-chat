@@ -1,8 +1,8 @@
 <?php
 /*
-Plugin Name: JGChat
+Plugin Name: JG Chat
 Description: A customizable chatbot powered by Claude AI
-Version: 1.92
+Version: 2.02
 Author: jaglab
 */
 
@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define version constant based on plugin version
-define('JGCHAT_VERSION', '1.92');
+define('JGCHAT_VERSION', '2.02');
 
 // Define database version
 global $jgchat_db_version;
@@ -149,6 +149,7 @@ function jgchat_register_settings() {
     register_setting('jgchat_settings', 'jgchat_model');
     register_setting('jgchat_settings', 'jgchat_knowledge_base');
     register_setting('jgchat_settings', 'jgchat_widget_enabled');
+    register_setting('jgchat_settings', 'jgchat_theme_mode');
 }
 add_action('admin_init', 'jgchat_register_settings');
 
@@ -169,10 +170,59 @@ function jgchat_enqueue_scripts() {
         'ajaxurl' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('jgchat_nonce'),
         'welcomeMessage' => wp_kses_post(get_option('jgchat_welcome', "Hello! I'm a customizable chatbot powered by Claude AI. How can I help you today?")),
-        'placeholder' => esc_attr(get_option('jgchat_placeholder', 'Type your message...'))
+        'placeholder' => esc_attr(get_option('jgchat_placeholder', 'Type your message...')),
+        'themeMode' => esc_attr(get_option('jgchat_theme_mode', 'dark'))
     ));
 }
 add_action('wp_enqueue_scripts', 'jgchat_enqueue_scripts');
+
+// Enqueue admin scripts and styles
+function jgchat_admin_enqueue_scripts($hook) {
+    // Only load on JGChat settings page
+    if ($hook !== 'toplevel_page_jgchat-settings' && $hook !== 'jgchat_page_jgchat-logs') {
+        return;
+    }
+    
+    wp_enqueue_style('jgchat-admin-styles', plugins_url('css/jgchat.css', __FILE__), array(), JGCHAT_VERSION);
+    
+    // Add custom admin styles for the preview
+    wp_add_inline_style('jgchat-admin-styles', '
+        #jgchat-theme-preview {
+            width: 300px;
+            height: 200px;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background: var(--jgchat-bg-primary);
+            border: 1px solid var(--jgchat-border-color);
+        }
+    ');
+    
+    // Add inline script for theme mode preview
+    wp_add_inline_script('jquery', '
+        jQuery(document).ready(function($) {
+            // Add a preview element if it doesn\'t exist
+            if ($("#jgchat-theme-preview").length === 0) {
+                $("input[name=\'jgchat_theme_mode\']:first").closest("tr").after(\'<tr><th scope="row">Theme Preview</th><td><div id="jgchat-theme-preview"><div class="jgchat-message jgchat-bot-message"><p>This is how the chatbot messages will look.</p></div><div class="jgchat-message jgchat-user-message"><p>This is how your messages will look.</p></div></div></td></tr>\');
+            }
+            
+            // Handle theme mode change
+            $("input[name=\'jgchat_theme_mode\']").on("change", function() {
+                if ($(this).val() === "light") {
+                    $("#jgchat-theme-preview").addClass("jgchat-light-mode");
+                } else {
+                    $("#jgchat-theme-preview").removeClass("jgchat-light-mode");
+                }
+            });
+            
+            // Apply current theme on page load
+            if ($("input[name=\'jgchat_theme_mode\']:checked").val() === "light") {
+                $("#jgchat-theme-preview").addClass("jgchat-light-mode");
+            }
+        });
+    ');
+}
+add_action('admin_enqueue_scripts', 'jgchat_admin_enqueue_scripts');
 
 // Create the settings page
 function jgchat_settings_page() {
@@ -199,6 +249,21 @@ function jgchat_settings_page() {
                             Display chat widget in page footer
                         </label>
                         <p class="description">When disabled, use shortcode [jgchat] to embed the chat interface in your content.</p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Theme Mode</th>
+                    <td>
+                        <label>
+                            <input type="radio" name="jgchat_theme_mode" value="dark" <?php checked(get_option('jgchat_theme_mode', 'dark'), 'dark'); ?>>
+                            Dark Mode
+                        </label>
+                        <br>
+                        <label>
+                            <input type="radio" name="jgchat_theme_mode" value="light" <?php checked(get_option('jgchat_theme_mode', 'dark'), 'light'); ?>>
+                            Light Mode
+                        </label>
+                        <p class="description">Choose between light and dark mode for the chat interface.</p>
                     </td>
                 </tr>
                 <tr>
@@ -659,13 +724,18 @@ function jgchat_logs_page() {
 
 // Create shortcode for embedding the chat interface
 function jgchat_shortcode($atts) {
-    $atts = shortcode_atts(array(), $atts);
+    $atts = shortcode_atts(array(
+        'height' => '600px',
+    ), $atts);
+    
+    $theme_mode = get_option('jgchat_theme_mode', 'dark');
+    $theme_class = ($theme_mode === 'light') ? ' jgchat-light-mode' : '';
     
     ob_start();
     ?>
-    <div id="jgchat-container" class="jgchat-embedded">
+    <div class="jgchat-embedded<?php echo esc_attr($theme_class); ?>" style="height: <?php echo esc_attr($atts['height']); ?>">
         <div id="jgchat-messages"></div>
-        <div id="jgchat-typing" class="jgchat-typing" style="display: none;">
+        <div id="jgchat-typing" style="display: none;" class="jgchat-typing">
             <div class="typing-dot"></div>
             <div class="typing-dot"></div>
             <div class="typing-dot"></div>
@@ -682,24 +752,27 @@ add_shortcode('jgchat', 'jgchat_shortcode');
 
 // Add widget to footer only if enabled
 function jgchat_add_to_footer() {
+    // Check if widget is enabled
     if (get_option('jgchat_widget_enabled', '1') !== '1') {
         return;
     }
+    
+    $theme_mode = get_option('jgchat_theme_mode', 'dark');
+    $theme_class = ($theme_mode === 'light') ? ' jgchat-light-mode' : '';
+    
+    $chatbot_name = get_option('jgchat_name', 'JGChat');
     ?>
-    <!-- Chat Widget Button -->
-    <div id="jgchat-widget-button" class="jgchat-widget-closed">
-        <div class="jgchat-widget-icon">🗪</div>
-        <div class="jgchat-notification-dot" style="display: none;"></div>
+    <div id="jgchat-widget-button">
+        <div class="jgchat-widget-icon">💬</div>
     </div>
-
-    <!-- Chat Widget Container -->
-    <div id="jgchat-widget-container" style="display: none;">
+    
+    <div id="jgchat-widget-container" class="<?php echo esc_attr($theme_class); ?>" style="display: none;">
         <div class="jgchat-widget-header">
-            <span class="jgchat-widget-title"><?php echo esc_html(get_option('jgchat_name', 'JGChat')); ?></span>
-            <button class="jgchat-widget-minimize">−</button>
+            <div class="jgchat-widget-title"><?php echo esc_html($chatbot_name); ?></div>
+            <button class="jgchat-widget-minimize">✕</button>
         </div>
         <div id="jgchat-messages"></div>
-        <div id="jgchat-typing" class="jgchat-typing" style="display: none;">
+        <div id="jgchat-typing" style="display: none;" class="jgchat-typing">
             <div class="typing-dot"></div>
             <div class="typing-dot"></div>
             <div class="typing-dot"></div>
