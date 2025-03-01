@@ -19,7 +19,11 @@ Backend example:
 - 📚 **Knowledge Base**: Feed your chatbot custom information to provide tailored responses
 - 📊 **Question Logging**: Track what users are asking with built-in logging and CSV export
 - 🔄 **Chat History**: Maintains conversation context for natural dialogue
-- 🎭 **Model Selection**: Choose from Claude 3.5 or Claude 3 models to balance capability and cost
+- 🎭 **Model Selection**: Choose from the latest Claude models with dynamic refresh capability
+  - One-click refresh to fetch available models from Anthropic
+  - Shows full model IDs with descriptions
+  - Indicates latest model versions
+  - Automatically filters out deprecated models
 
 ## Installation
 
@@ -37,6 +41,9 @@ Backend example:
 2. Go to `WordPress Admin > JGChat > Settings`
 3. Enter your Anthropic API key
 4. Select your preferred Claude model
+   - Click "Refresh Models" to get the latest available models from Anthropic
+   - Choose from the dropdown, which shows full model IDs and descriptions
+   - Models marked as "latest" are indicated
 5. Set your chatbot name, welcome message, and input placeholder text
 6. Add any specific knowledge to the Knowledge Base text area
 7. Save your settings

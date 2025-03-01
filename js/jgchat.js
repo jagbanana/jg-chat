@@ -242,4 +242,64 @@ jQuery(document).ready(function($) {
 
     // Add welcome message at initialization
     addWelcomeMessage();
+
+    // Handle model refresh button click
+    $('#jgchat-refresh-models').on('click', function(e) {
+        e.preventDefault();
+        const button = $(this);
+        const modelSelect = $('#jgchat-model');
+        const currentModel = modelSelect.val();
+        
+        button.prop('disabled', true);
+        
+        $.ajax({
+            url: jgchatAjax.ajaxurl,
+            type: 'POST',
+            data: {
+                action: 'jgchat_fetch_models',
+                nonce: jgchatAjax.nonce
+            },
+            success: function(response) {
+                if (response.success && response.data) {
+                    modelSelect.empty();
+                    
+                    response.data.forEach(function(model) {
+                        const option = $('<option>', {
+                            value: model.id,
+                            text: model.id
+                        });
+                        
+                        // Add description as data attribute
+                        if (model.description) {
+                            option.attr('data-description', model.description);
+                        }
+                        
+                        // Add 'latest' tag if applicable
+                        if (model.latest) {
+                            option.text(option.text() + ' (latest)');
+                        }
+                        
+                        modelSelect.append(option);
+                    });
+                    
+                    // Try to restore the previously selected model
+                    if (currentModel && modelSelect.find(`option[value="${currentModel}"]`).length) {
+                        modelSelect.val(currentModel);
+                    }
+                    
+                    // Add descriptions below the select
+                    modelSelect.off('change').on('change', function() {
+                        const description = $(this).find(':selected').data('description');
+                        $('#jgchat-model-description').text(description || '');
+                    }).trigger('change');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error fetching models:', error);
+            },
+            complete: function() {
+                button.prop('disabled', false);
+            }
+        });
+    });
 });

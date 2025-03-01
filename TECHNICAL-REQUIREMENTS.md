@@ -47,7 +47,12 @@ JGChat is a WordPress plugin that integrates Anthropic's Claude AI into WordPres
    - Welcome message
    - Input placeholder text
    - Claude API key
-   - Model selection (Claude 3.5 models and Claude 3 models)
+   - Model selection with dynamic refresh:
+     - Refresh button to fetch latest available Claude models from Anthropic API
+     - Models stored in WordPress options table
+     - Dropdown displays full model IDs (e.g., claude-3-7-sonnet-20250219)
+     - Shows model descriptions and "latest" tags where applicable
+     - Automatically filters out deprecated models
    - Knowledge base content input
    - Toggle for enabling/disabling the footer widget
 

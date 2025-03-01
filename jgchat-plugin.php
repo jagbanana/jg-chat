@@ -38,7 +38,74 @@ function jgchat_install() {
 
     add_option('jgchat_db_version', $jgchat_db_version);
 }
-register_activation_hook(__FILE__, 'jgchat_install');
+register_activation_hook(__FILE__, 'jgchat_activate');
+
+function jgchat_activate() {
+    // Create logs table
+    jgchat_install();
+    
+    // Try to fetch models if API key is set
+    $api_key = get_option('jgchat_api_key');
+    if (!empty($api_key)) {
+        jgchat_fetch_models_on_activation($api_key);
+    }
+}
+
+// Function to fetch models on plugin activation
+function jgchat_fetch_models_on_activation($api_key) {
+    $response = wp_remote_get('https://api.anthropic.com/v1/models', array(
+        'headers' => array(
+            'Content-Type' => 'application/json',
+            'x-api-key' => $api_key,
+            'anthropic-version' => '2023-06-01'
+        ),
+        'timeout' => 15
+    ));
+    
+    if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+        return; // Silently fail on activation
+    }
+    
+    $response_body = wp_remote_retrieve_body($response);
+    $body = json_decode($response_body, true);
+    
+    // Filter for Claude models only and organize them
+    $claude_models = array();
+    
+    if (isset($body['data']) && is_array($body['data'])) {
+        foreach ($body['data'] as $model) {
+            if (isset($model['id']) && strpos($model['id'], 'claude') !== false) {
+                // Skip deprecated models
+                if (isset($model['deprecated']) && $model['deprecated'] === true) {
+                    continue;
+                }
+                
+                // Extract model family and variant
+                $id = $model['id'];
+                
+                // Store model description if available
+                $description = isset($model['description']) ? $model['description'] : '';
+                
+                // Add model to the list
+                $claude_models[] = array(
+                    'id' => $id,
+                    'name' => $id, // Use the full model ID as the name
+                    'description' => $description,
+                    'created' => isset($model['created']) ? $model['created'] : 0,
+                    'latest' => isset($model['latest']) && $model['latest'] === true
+                );
+            }
+        }
+    }
+    
+    // Sort models by created date (descending)
+    usort($claude_models, function($a, $b) {
+        return $b['created'] - $a['created'];
+    });
+    
+    // Save the models to an option for use in the admin page
+    update_option('jgchat_available_models', $claude_models);
+}
 
 // Add menu items to WordPress admin
 function jgchat_admin_menu() {
@@ -155,18 +222,24 @@ function jgchat_settings_page() {
                 <tr>
                     <th scope="row">Claude Model</th>
                     <td>
-                        <select name="jgchat_model">
-                            <optgroup label="Claude 3.5 Models (Latest)">
-                                <option value="claude-3-5-sonnet-20241022" <?php selected(get_option('jgchat_model'), 'claude-3-5-sonnet-20241022'); ?>>Claude 3.5 Sonnet (Most Intelligent)</option>
-                                <option value="claude-3-5-haiku-20241022" <?php selected(get_option('jgchat_model'), 'claude-3-5-haiku-20241022'); ?>>Claude 3.5 Haiku (Fastest)</option>
-                            </optgroup>
-                            <optgroup label="Claude 3 Models">
-                                <option value="claude-3-opus-20240229" <?php selected(get_option('jgchat_model'), 'claude-3-opus-20240229'); ?>>Claude 3 Opus (Most Capable)</option>
-                                <option value="claude-3-sonnet-20240229" <?php selected(get_option('jgchat_model'), 'claude-3-sonnet-20240229'); ?>>Claude 3 Sonnet (Balanced)</option>
-                                <option value="claude-3-haiku-20240307" <?php selected(get_option('jgchat_model'), 'claude-3-haiku-20240307'); ?>>Claude 3 Haiku (Fastest)</option>
-                            </optgroup>
+                        <select name="jgchat_model" id="jgchat-model">
+                            <?php
+                            $current_model = get_option('jgchat_model');
+                            $available_models = get_option('jgchat_available_models', array());
+                            if (!empty($available_models)) {
+                                foreach ($available_models as $model) {
+                                    $selected = $current_model === $model['id'] ? ' selected' : '';
+                                    $model_text = $model['id'];
+                                    if ($model['latest']) {
+                                        $model_text .= ' (latest)';
+                                    }
+                                    echo '<option value="' . esc_attr($model['id']) . '"' . $selected . ' data-description="' . esc_attr($model['description']) . '">' . esc_html($model_text) . '</option>';
+                                }
+                            }
+                            ?>
                         </select>
-                        <p class="description">Select the Claude model to power your chatbot. Claude 3.5 models offer improved intelligence and capabilities.</p>
+                        <button type="button" id="jgchat-refresh-models" class="button">Refresh Models</button>
+                        <p class="description" id="jgchat-model-description"></p>
                     </td>
                 </tr>
                 <tr>
@@ -180,6 +253,77 @@ function jgchat_settings_page() {
             <?php submit_button(); ?>
         </form>
     </div>
+    
+    <script>
+    jQuery(document).ready(function($) {
+        $('#jgchat-refresh-models').on('click', function() {
+            const button = $(this);
+            const statusSpan = $('#jgchat-refresh-status');
+            const modelSelect = $('select[name="jgchat_model"]');
+            const selectedModel = modelSelect.val();
+            
+            // Disable button and show loading status
+            button.prop('disabled', true);
+            statusSpan.text('Fetching models...').show().css('color', '');
+            
+            $.ajax({
+                url: ajaxurl,
+                type: 'POST',
+                data: {
+                    action: 'jgchat_fetch_models',
+                    nonce: '<?php echo wp_create_nonce('jgchat_nonce'); ?>'
+                },
+                success: function(response) {
+                    if (response.success && response.data) {
+                        // Clear existing options
+                        modelSelect.empty();
+                        
+                        // Add new options
+                        $.each(response.data, function(index, model) {
+                            modelSelect.append(
+                                $('<option></option>')
+                                    .attr('value', model.id)
+                                    .text(model.name + ' - ' + model.description)
+                            );
+                        });
+                        
+                        // Try to select the previously selected model, or select the first one
+                        if (selectedModel && modelSelect.find('option[value="' + selectedModel + '"]').length) {
+                            modelSelect.val(selectedModel);
+                        }
+                        
+                        statusSpan.text('Models refreshed successfully!').css('color', 'green');
+                        
+                        // Hide status after 3 seconds
+                        setTimeout(function() {
+                            statusSpan.fadeOut();
+                        }, 3000);
+                    } else {
+                        statusSpan.text('Error: ' + (response.data || 'Unknown error')).css('color', 'red');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    statusSpan.text('Error: ' + error).css('color', 'red');
+                },
+                complete: function() {
+                    button.prop('disabled', false);
+                }
+            });
+        });
+        
+        // Show model description on select change
+        $('#jgchat-model').on('change', function() {
+            const selectedOption = $(this).find('option:selected');
+            const description = selectedOption.data('description');
+            $('#jgchat-model-description').text(description);
+        });
+        
+        // Show initial model description
+        const initialModel = $('#jgchat-model option:selected');
+        const initialDescription = initialModel.data('description');
+        $('#jgchat-model-description').text(initialDescription);
+    });
+    </script>
     <?php
 }
 
@@ -280,6 +424,83 @@ function jgchat_handle_chat() {
 }
 add_action('wp_ajax_jgchat', 'jgchat_handle_chat');
 add_action('wp_ajax_nopriv_jgchat', 'jgchat_handle_chat');
+
+// Handle AJAX request to fetch available Claude models
+function jgchat_fetch_models() {
+    check_ajax_referer('jgchat_nonce', 'nonce');
+    
+    $api_key = get_option('jgchat_api_key');
+    
+    if (empty($api_key)) {
+        wp_send_json_error('API key not configured');
+        return;
+    }
+    
+    $response = wp_remote_get('https://api.anthropic.com/v1/models', array(
+        'headers' => array(
+            'Content-Type' => 'application/json',
+            'x-api-key' => $api_key,
+            'anthropic-version' => '2023-06-01'
+        ),
+        'timeout' => 15
+    ));
+    
+    if (is_wp_error($response)) {
+        error_log('JGChat Debug - WP Error: ' . $response->get_error_message());
+        wp_send_json_error($response->get_error_message());
+        return;
+    }
+    
+    $response_code = wp_remote_retrieve_response_code($response);
+    $response_body = wp_remote_retrieve_body($response);
+    
+    if ($response_code !== 200) {
+        wp_send_json_error('API returned status ' . $response_code . ': ' . $response_body);
+        return;
+    }
+    
+    $body = json_decode($response_body, true);
+    
+    // Filter for Claude models only and organize them
+    $claude_models = array();
+    
+    if (isset($body['data']) && is_array($body['data'])) {
+        foreach ($body['data'] as $model) {
+            if (isset($model['id']) && strpos($model['id'], 'claude') !== false) {
+                // Skip deprecated models
+                if (isset($model['deprecated']) && $model['deprecated'] === true) {
+                    continue;
+                }
+                
+                // Extract model family and variant
+                $id = $model['id'];
+                
+                // Store model description if available
+                $description = isset($model['description']) ? $model['description'] : '';
+                
+                // Add model to the list
+                $claude_models[] = array(
+                    'id' => $id,
+                    'name' => $id, // Use the full model ID as the name
+                    'description' => $description,
+                    'created' => isset($model['created']) ? $model['created'] : 0,
+                    'latest' => isset($model['latest']) && $model['latest'] === true
+                );
+            }
+        }
+    }
+    
+    // Sort models by created date (descending)
+    usort($claude_models, function($a, $b) {
+        return $b['created'] - $a['created'];
+    });
+    
+    // Save the models to an option for use in the admin page
+    update_option('jgchat_available_models', $claude_models);
+    
+    wp_send_json_success($claude_models);
+}
+add_action('wp_ajax_jgchat_fetch_models', 'jgchat_fetch_models');
 
 // Create WP_List_Table subclass for the logs
 if (!class_exists('WP_List_Table')) {
