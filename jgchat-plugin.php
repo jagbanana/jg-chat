@@ -2,7 +2,7 @@
 /*
 Plugin Name: JG Chat
 Description: A customizable chatbot powered by Claude AI
-Version: 2.02
+Version: 2.03
 Author: jaglab
 */
 
@@ -12,7 +12,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define version constant based on plugin version
-define('JGCHAT_VERSION', '2.02');
+define('JGCHAT_VERSION', '2.03');
 
 // Define database version
 global $jgchat_db_version;
@@ -162,7 +162,9 @@ function jgchat_enqueue_scripts() {
     wp_add_inline_script('marked', '
         marked.setOptions({
             breaks: true,
-            gfm: true
+            gfm: true,
+            headerIds: false,
+            mangle: false
         });
     ');
     

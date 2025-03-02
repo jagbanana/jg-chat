@@ -64,49 +64,52 @@ jQuery(document).ready(function($) {
     }
 
     function formatMessage(message) {
-        // Configure marked
-        marked.setOptions({
-            breaks: true,
-            gfm: true,
-            headerIds: false
-        });
-
-        // Split the message into lines and process each section
-        const sections = message.split(/```/);
-        let formattedContent = '';
-        
-        sections.forEach((section, index) => {
-            if (index % 2 === 0) {
-                // Regular text section
-                formattedContent += section
-                    .split('\n')
-                    .map(line => {
-                        line = line.trim();
-                        if (!line) return ''; // Skip empty lines
-                        
-                        // Check if line is a section header (ends with colon)
-                        if (line.endsWith(':')) {
-                            return `<p class="chat-header">${makeLinksClickable(line)}</p>`;
-                        }
-                        
-                        // Handle list items (lines starting with dash)
-                        if (line.startsWith('-')) {
-                            const content = line.substring(1).trim();
-                            return `<p class="chat-list-item">&bull; ${makeLinksClickable(content)}</p>`;
-                        }
-                        
-                        // Regular text
-                        return `<p>${makeLinksClickable(line)}</p>`;
-                    })
-                    .filter(line => line)
-                    .join('\n');
-            } else {
-                // Code section
-                formattedContent += `<code>${section.trim()}</code>`;
+        // Use marked to parse markdown
+        try {
+            // Configure marked options
+            marked.setOptions({
+                breaks: true,         // Add line breaks on single newlines
+                gfm: true,            // Use GitHub Flavored Markdown
+                headerIds: false,     // Don't add IDs to headers
+                mangle: false,        // Don't mangle email addresses
+                sanitize: false,      // Don't sanitize HTML (DOMPurify would be better but we're not using it here)
+            });
+            
+            // Process code blocks specially to ensure proper formatting
+            const sections = message.split(/```([\s\S]*?)```/g);
+            let formattedContent = '';
+            
+            for (let i = 0; i < sections.length; i++) {
+                if (i % 2 === 0) {
+                    // Regular markdown text
+                    formattedContent += marked.parse(sections[i]);
+                } else {
+                    // Code block - wrap in pre and code tags
+                    const codeContent = sections[i].trim();
+                    let language = '';
+                    
+                    // Check if the code block has a language specified
+                    const firstLine = codeContent.split('\n')[0].trim();
+                    let codeBody = codeContent;
+                    
+                    if (firstLine && !firstLine.includes(' ') && firstLine.length > 0) {
+                        language = firstLine;
+                        codeBody = codeContent.substring(firstLine.length).trim();
+                    }
+                    
+                    formattedContent += `<pre><code class="language-${language}">${codeBody}</code></pre>`;
+                }
             }
-        });
-
-        return formattedContent;
+            
+            // Make links clickable and add security attributes
+            formattedContent = formattedContent.replace(/<a\s+href="([^"]+)"([^>]*)>/g, 
+                '<a href="$1" target="_blank" rel="noopener noreferrer"$2>');
+                
+            return formattedContent;
+        } catch (e) {
+            console.error('Error parsing markdown:', e);
+            return `<p>${message}</p>`;
+        }
     }
 
     function makeLinksClickable(text) {
@@ -145,7 +148,7 @@ jQuery(document).ready(function($) {
         const messageDiv = createMessageElement(false);
         
         // Split into code and non-code sections
-        const sections = message.split(/```/);
+        const sections = message.split(/```([\s\S]*?)```/g);
         let currentContent = '';
         
         for (let i = 0; i < sections.length; i++) {
@@ -164,7 +167,7 @@ jQuery(document).ready(function($) {
                     await new Promise(resolve => setTimeout(resolve, 50));
                 }
             } else {
-                // Code section - add all at once
+                // Code section - add all at once with backticks
                 currentContent += '```' + section + '```';
                 messageDiv.html(formatMessage(currentContent));
                 messagesContainer.scrollTop(messagesContainer[0].scrollHeight);

@@ -96,10 +96,45 @@
     }
 }
 
+/* Markdown styling */
 .jgchat-message p {
     margin: 0.5em 0;
     padding-left: 0;
     color: var(--jgchat-text-primary);
+}
+
+.jgchat-message h1, 
+.jgchat-message h2, 
+.jgchat-message h3, 
+.jgchat-message h4, 
+.jgchat-message h5, 
+.jgchat-message h6 {
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+    color: var(--jgchat-text-primary);
+    font-weight: 600;
+}
+
+.jgchat-message h1 { font-size: 1.5em; }
+.jgchat-message h2 { font-size: 1.4em; }
+.jgchat-message h3 { font-size: 1.3em; }
+.jgchat-message h4 { font-size: 1.2em; }
+.jgchat-message h5 { font-size: 1.1em; }
+.jgchat-message h6 { font-size: 1em; }
+
+.jgchat-message strong {
+    font-weight: 700;
+}
+
+.jgchat-message em {
+    font-style: italic;
+}
+
+.jgchat-message blockquote {
+    margin: 0.5em 0;
+    padding-left: 1em;
+    border-left: 3px solid var(--jgchat-border-color);
+    color: var(--jgchat-text-secondary);
 }
 
 .chat-header {
@@ -121,16 +156,17 @@
     color: var(--jgchat-text-primary);
 }
 
-.jgchat-message ul li {
-    margin: 0.3em 0;
-    padding-left: 0.5em;
+.jgchat-message ol {
+    margin: 0.5em 0;
+    padding-left: 1.5em;
+    list-style: decimal;
+    color: var(--jgchat-text-primary);
 }
 
-.jgchat-message ol {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-    color: var(--jgchat-text-primary);
+.jgchat-message ul li,
+.jgchat-message ol li {
+    margin: 0.3em 0;
+    padding-left: 0.5em;
 }
 
 /* Code formatting */
@@ -138,18 +174,63 @@
     background: var(--jgchat-code-bg);
     border: 1px solid var(--jgchat-code-border);
     color: var(--jgchat-text-primary);
-    padding: 8px;
+    padding: 0.2em 0.4em;
     border-radius: 4px;
     font-family: monospace;
+    font-size: 0.9em;
 }
 
 .jgchat-message pre {
     background: var(--jgchat-code-bg);
-    padding: 10px;
+    padding: 1em;
     border-radius: 4px;
     overflow-x: auto;
     margin: 1em 0;
     border: 1px solid var(--jgchat-code-border);
+}
+
+.jgchat-message pre code {
+    background: transparent;
+    border: none;
+    padding: 0;
+    white-space: pre;
+    display: block;
+    overflow-x: auto;
+}
+
+/* Horizontal rule */
+.jgchat-message hr {
+    margin: 1em 0;
+    border: 0;
+    border-top: 1px solid var(--jgchat-border-color);
+}
+
+/* Tables */
+.jgchat-message table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+}
+
+.jgchat-message th,
+.jgchat-message td {
+    border: 1px solid var(--jgchat-border-color);
+    padding: 0.5em;
+    text-align: left;
+}
+
+.jgchat-message th {
+    background-color: var(--jgchat-bg-secondary);
+}
+
+/* Links */
+.jgchat-message a {
+    color: var(--jgchat-button-bg);
+    text-decoration: underline;
+}
+
+.jgchat-message a:hover {
+    color: var(--jgchat-button-hover-bg);
 }
 
 /* Message types */
