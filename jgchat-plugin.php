@@ -157,7 +157,8 @@ add_action('admin_init', 'jgchat_register_settings');
 function jgchat_enqueue_scripts() {
     wp_enqueue_style('jgchat-styles', plugins_url('css/jgchat.css', __FILE__), array(), JGCHAT_VERSION);
     wp_enqueue_script('marked', 'https://cdn.jsdelivr.net/npm/marked@4.0.0/marked.min.js', array(), '4.0.0', true);
-    wp_enqueue_script('jgchat-script', plugins_url('js/jgchat.js', __FILE__), array('jquery', 'marked'), JGCHAT_VERSION, true);
+    wp_enqueue_script('dompurify', 'https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.11/purify.min.js', array(), '3.0.11', true);
+    wp_enqueue_script('jgchat-script', plugins_url('js/jgchat.js', __FILE__), array('jquery', 'marked', 'dompurify'), JGCHAT_VERSION, true);
     
     wp_add_inline_script('marked', '
         marked.setOptions({
